@@ -27,6 +27,37 @@ sheet = service.spreadsheets()
 result = sheet.values().get(spreadsheetId=SHEET_ID, range=f"{SHEET_NAME}!A2:B").execute()
 data = result.get('values', [])
 item_prices = {row[0].strip().lower(): int(row[1]) for row in data}
+def parse_variations(pizza_text):
+    variations = []
+    variation_keywords = ['large', 'regular', 'cheese burst', 'new hand tossed', 'veg pizza', 'non veg pizza']
+    for variation in variation_keywords:
+        if variation in pizza_text.lower():
+            variations.append(variation.lower())
+    return variations
+
+# Inside the main loop
+for qty, pizza_text in parsed_pizzas:
+    core_pizza = extract_core_pizza_name(pizza_text)
+    base_price = item_prices.get(core_pizza, 0)
+    topping_total = 0
+
+    # Parse variations (size, crust, etc.)
+    variations = parse_variations(pizza_text)
+    variations_total = sum([item_prices.get(v, 0) for v in variations])
+
+    toppings = parsed_toppings.get(core_pizza, [])
+    for topping in toppings:
+        topping_price = item_prices.get(topping, 0)
+        topping_total += topping_price
+
+    total_price_per_pizza = base_price + variations_total + topping_total
+
+    result_list.append({
+        "name": pizza_text,
+        "currency": "USD",
+        "amount": total_price_per_pizza,
+        "qty": qty
+    })
 
 # Helpers
 def extract_core_pizza_name(pizza_text):
