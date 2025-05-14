@@ -5,7 +5,6 @@ import os
 import json
 import re
 
-
 app = Flask(__name__)
 
 # Setup Google Sheets API (initialize only once on startup)
@@ -31,14 +30,12 @@ item_prices = {row[0].strip().lower(): int(row[1]) for row in data}
 
 # Helpers
 def extract_core_pizza_name(pizza_text):
-    # This should match your pizza core names in the sheet
     patterns = [
         r'(margherita)',
         r'(farmhouse)',
         r'(mexicana)',
         r'(peppy paneer)',
         r'(veg extravaganza)',
-        # Add more as per your sheet
     ]
     for pattern in patterns:
         match = re.search(pattern, pizza_text, re.IGNORECASE)
@@ -59,6 +56,10 @@ def parse_toppings(text):
         topping_sets[extract_core_pizza_name(pizza)] = topping_list
     return topping_sets
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "Pizza Price Calculator API is running."})
+
 @app.route('/calculate_price', methods=['POST'])
 def calculate_price():
     request_json = request.get_json()
@@ -71,7 +72,6 @@ def calculate_price():
 
     result_list = []
 
-    # Parse pizzas and toppings
     parsed_pizzas = parse_items(pizzaname)
     parsed_toppings = parse_toppings(pizzatoppings)
 
@@ -88,13 +88,12 @@ def calculate_price():
         total_price_per_pizza = base_price + topping_total
 
         result_list.append({
-            "name": pizza_text,  # Use exact pizza text from input
+            "name": pizza_text,
             "currency": "USD",
             "amount": total_price_per_pizza,
             "qty": qty
         })
 
-    # Parse additional items
     parsed_additional = parse_items(additionalitems)
     for qty, item in parsed_additional:
         item_price = item_prices.get(item.lower(), 0)
